@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>كاميرا الاسم</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Start Screen */
+        .start-screen {
+            text-align: center;
+            max-width: 600px;
+            margin: 50px auto;
+            background: white;
+            padding: 50px;
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .title {
+            color: #00b4d8;
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .camera-icon {
+            font-size: 150px;
+            margin: 30px 0;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            border: none;
+            padding: 20px 50px;
+            font-size: 1.5rem;
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+
+        /* Game Screen */
+        .game-screen {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .game-title {
+            text-align: center;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .letters-board {
+            background: linear-gradient(135deg, #ffeaa7, #fdcb6e);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .letters-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .letter {
+            background: linear-gradient(135deg, #fff, #e3f2fd);
+            border: 3px solid #2196f3;
+            border-radius: 15px;
+            padding: 15px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #1976d2;
+            cursor: grab;
+            text-align: center;
+            transition: all 0.2s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .letter:hover {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .letter.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        .letter.used {
+            opacity: 0.3;
+            cursor: not-allowed;
+            filter: grayscale(100%);
+        }
+
+        .name-box-container {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .instruction {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #00b4d8;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .name-box {
+            min-height: 120px;
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border: 4px dashed #2196f3;
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .name-box.drag-over {
+            background: linear-gradient(135deg, #c8e6c9, #a5d6a7);
+            border-color: #4caf50;
+            transform: scale(1.02);
+        }
+
+        .name-box.empty::after {
+            content: 'ضع الحروف هنا';
+            color: #90a4ae;
+            font-size: 1.2rem;
+            opacity: 0.5;
+        }
+
+        .letter-in-box {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            border: 3px solid #0288d1;
+            border-radius: 15px;
+            padding: 15px 20px;
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            animation: popIn 0.3s;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .letter-in-box:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0) rotate(180deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        .action-buttons {
+            text-align: center;
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-custom {
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            border-radius: 25px;
+            border: none;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-clear {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            color: white;
+        }
+
+        .btn-clear:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn-photo {
+            background: linear-gradient(135deg, #51cf66, #37b24d);
+            color: white;
+        }
+
+        .btn-photo:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn-back {
+            background: linear-gradient(135deg, #868e96, #495057);
+            color: white;
+        }
+
+        .btn-back:hover {
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 1.8rem;
+            }
+            .camera-icon {
+                font-size: 100px;
+            }
+            .start-btn {
+                font-size: 1.2rem;
+                padding: 15px 35px;
+            }
+            .letters-container {
+                grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            }
+            .letter {
+                font-size: 1.4rem;
+                padding: 10px;
+            }
+            .letter-in-box {
+                font-size: 1.5rem;
+                padding: 10px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Start Screen -->
+    <div class="screen active" id="startScreen">
+        <div class="start-screen">
+            <h1 class="title">📸 كاميرا الاسم 📸</h1>
+            <div class="camera-icon">📷</div>
+            <button class="start-btn" onclick="startGame()">
+                اضغط لتلتقط صورة لاسمك
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div class="screen" id="gameScreen">
+        <h2 class="game-title">✨ اصنع اسمك من الحروف ✨</h2>
+        
+        <div class="game-screen">
+            <!-- Letters Board -->
+            <div class="letters-board">
+                <div class="letters-container" id="lettersContainer"></div>
+            </div>
+
+            <!-- Name Box -->
+            <div class="name-box-container">
+                <div class="instruction">📝 اكتب اسمك هنا 📝</div>
+                <div class="name-box empty" id="nameBox"></div>
+                
+                <div class="action-buttons">
+                    <button class="btn-custom btn-clear" onclick="clearName()">
+                        🗑️ امسح الكل
+                    </button>
+                    <button class="btn-custom btn-photo" onclick="takePicture()">
+                        📸 التقط الصورة
+                    </button>
+                    <button class="btn-custom btn-back" onclick="backToStart()">
+                        ◀️ رجوع
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; border: 5px solid #4caf50;">
+                <div class="modal-body text-center p-5" style="background: linear-gradient(135deg, #c8e6c9, #a5d6a7);">
+                    <h2 style="font-size: 4rem;">📸</h2>
+                    <h3 style="color: #2e7d32; font-weight: bold; margin: 20px 0;">رائع!</h3>
+                    <div style="background: white; padding: 20px; border-radius: 15px; margin: 20px 0;">
+                        <p style="font-size: 1.2rem; color: #666; margin-bottom: 10px;">اسمك هو:</p>
+                        <h4 style="color: #00b4d8; font-weight: bold; font-size: 2.5rem;" id="finalName"></h4>
+                    </div>
+                    <p style="font-size: 1.3rem; color: #2e7d32;">✨ تم التقاط الصورة بنجاح! ✨</p>
+                    <button type="button" class="btn btn-custom btn-photo mt-3" data-bs-dismiss="modal" onclick="resetGame()">
+                        العب مرة أخرى
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Arabic letters
+        const arabicLetters = [
+            'ا', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'س', 'ش', 
+            'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل', 'م', 'ن', 'ه', 'و', 'ي'
+        ];
+
+        let draggedLetter = null;
+        let nameLetters = [];
+        const modal = new bootstrap.Modal(document.getElementById('successModal'));
+
+        // Initialize game
+        function initGame() {
+            const container = document.getElementById('lettersContainer');
+            container.innerHTML = '';
+            
+            arabicLetters.forEach((letter, index) => {
+                const letterDiv = document.createElement('div');
+                letterDiv.className = 'letter';
+                letterDiv.textContent = letter;
+                letterDiv.draggable = true;
+                letterDiv.dataset.letter = letter;
+                letterDiv.dataset.index = index;
+                
+                letterDiv.addEventListener('dragstart', handleDragStart);
+                letterDiv.addEventListener('dragend', handleDragEnd);
+                
+                container.appendChild(letterDiv);
+            });
+
+            setupDropZone();
+        }
+
+        function handleDragStart(e) {
+            if (e.target.classList.contains('used')) {
+                e.preventDefault();
+                return;
+            }
+            draggedLetter = e.target;
+            e.target.classList.add('dragging');
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function setupDropZone() {
+            const nameBox = document.getElementById('nameBox');
+            
+            nameBox.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                nameBox.classList.add('drag-over');
+            });
+
+            nameBox.addEventListener('dragleave', () => {
+                nameBox.classList.remove('drag-over');
+            });
+
+            nameBox.addEventListener('drop', (e) => {
+                e.preventDefault();
+                nameBox.classList.remove('drag-over');
+                
+                if (draggedLetter && !draggedLetter.classList.contains('used')) {
+                    const letter = draggedLetter.dataset.letter;
+                    
+                    // Mark original as used
+                    draggedLetter.classList.add('used');
+                    
+                    // Add to name box
+                    addLetterToBox(letter, draggedLetter.dataset.index);
+                    
+                    nameBox.classList.remove('empty');
+                }
+                
+                draggedLetter = null;
+            });
+        }
+
+        function addLetterToBox(letter, originalIndex) {
+            const nameBox = document.getElementById('nameBox');
+            const letterDiv = document.createElement('div');
+            letterDiv.className = 'letter-in-box';
+            letterDiv.textContent = letter;
+            letterDiv.dataset.originalIndex = originalIndex;
+            
+            // Click to remove
+            letterDiv.addEventListener('click', function() {
+                removeLetter(this);
+            });
+            
+            nameBox.appendChild(letterDiv);
+            nameLetters.push(letter);
+        }
+
+        function removeLetter(letterDiv) {
+            const originalIndex = letterDiv.dataset.originalIndex;
+            const originalLetter = document.querySelector(`.letter[data-index="${originalIndex}"]`);
+            
+            if (originalLetter) {
+                originalLetter.classList.remove('used');
+            }
+            
+            letterDiv.remove();
+            
+            // Update array
+            nameLetters = Array.from(document.querySelectorAll('.letter-in-box')).map(el => el.textContent);
+            
+            // Check if empty
+            const nameBox = document.getElementById('nameBox');
+            if (nameBox.children.length === 0) {
+                nameBox.classList.add('empty');
+            }
+        }
+
+        function clearName() {
+            const nameBox = document.getElementById('nameBox');
+            const lettersInBox = nameBox.querySelectorAll('.letter-in-box');
+            
+            lettersInBox.forEach(letterDiv => {
+                const originalIndex = letterDiv.dataset.originalIndex;
+                const originalLetter = document.querySelector(`.letter[data-index="${originalIndex}"]`);
+                if (originalLetter) {
+                    originalLetter.classList.remove('used');
+                }
+            });
+            
+            nameBox.innerHTML = '';
+            nameBox.classList.add('empty');
+            nameLetters = [];
+        }
+
+        function takePicture() {
+            if (nameLetters.length === 0) {
+                alert('⚠️ من فضلك اكتب اسمك أولاً!');
+                return;
+            }
+            
+            const finalName = nameLetters.join('');
+            document.getElementById('finalName').textContent = finalName;
+            modal.show();
+        }
+
+        function startGame() {
+            document.getElementById('startScreen').classList.remove('active');
+            document.getElementById('gameScreen').classList.add('active');
+            initGame();
+        }
+
+        function backToStart() {
+            clearName();
+            document.getElementById('gameScreen').classList.remove('active');
+            document.getElementById('startScreen').classList.add('active');
+        }
+
+        function resetGame() {
+            clearName();
+            initGame();
+        }
+    </script>
+</body>
+</html>
