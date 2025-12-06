@@ -128,10 +128,9 @@
             cursor: grabbing;
         }
 
-        .letter.used {
-            opacity: 0.3;
-            cursor: not-allowed;
-            filter: grayscale(100%);
+        /* Audio elements */
+        #startAudio, #finishAudio {
+            display: none;
         }
 
         .name-box-container {
@@ -326,7 +325,7 @@
                         <h4 style="color: #00b4d8; font-weight: bold; font-size: 2.5rem;" id="finalName"></h4>
                     </div>
                     <p style="font-size: 1.3rem; color: #2e7d32;">✨ تم التقاط الصورة بنجاح! ✨</p>
-                    <button type="button" class="btn btn-custom btn-photo mt-3" data-bs-dismiss="modal" onclick="resetGame()">
+                    <button type="button" id="restartbtn" style="display: none;" class="btn btn-custom btn-photo mt-3" data-bs-dismiss="modal" onclick="resetGame()">
                         العب مرة أخرى
                     </button>
                 </div>
@@ -335,17 +334,22 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Audio elements -->
+    <audio id="startAudio" src="start.mp3"></audio>
+    <audio id="finishAudio" src="finsh.mp3"></audio>
+    
     <script>
         // Arabic letters
         const arabicLetters = [
             'ا', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'س', 'ش', 
-            'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل', 'م', 'ن', 'ه', 'و', 'ي'
+            'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل', 'م', 'ن', 'ه', 'و', 'ي','ء'
         ];
 
         let draggedLetter = null;
         let nameLetters = [];
         const modal = new bootstrap.Modal(document.getElementById('successModal'));
-
+         const restartbtn = document.getElementById('restartbtn');
         // Initialize game
         function initGame() {
             const container = document.getElementById('lettersContainer');
@@ -369,10 +373,6 @@
         }
 
         function handleDragStart(e) {
-            if (e.target.classList.contains('used')) {
-                e.preventDefault();
-                return;
-            }
             draggedLetter = e.target;
             e.target.classList.add('dragging');
         }
@@ -397,13 +397,10 @@
                 e.preventDefault();
                 nameBox.classList.remove('drag-over');
                 
-                if (draggedLetter && !draggedLetter.classList.contains('used')) {
+                if (draggedLetter) {
                     const letter = draggedLetter.dataset.letter;
                     
-                    // Mark original as used
-                    draggedLetter.classList.add('used');
-                    
-                    // Add to name box
+                    // Add to name box (without marking as used)
                     addLetterToBox(letter, draggedLetter.dataset.index);
                     
                     nameBox.classList.remove('empty');
@@ -430,13 +427,6 @@
         }
 
         function removeLetter(letterDiv) {
-            const originalIndex = letterDiv.dataset.originalIndex;
-            const originalLetter = document.querySelector(`.letter[data-index="${originalIndex}"]`);
-            
-            if (originalLetter) {
-                originalLetter.classList.remove('used');
-            }
-            
             letterDiv.remove();
             
             // Update array
@@ -451,15 +441,6 @@
 
         function clearName() {
             const nameBox = document.getElementById('nameBox');
-            const lettersInBox = nameBox.querySelectorAll('.letter-in-box');
-            
-            lettersInBox.forEach(letterDiv => {
-                const originalIndex = letterDiv.dataset.originalIndex;
-                const originalLetter = document.querySelector(`.letter[data-index="${originalIndex}"]`);
-                if (originalLetter) {
-                    originalLetter.classList.remove('used');
-                }
-            });
             
             nameBox.innerHTML = '';
             nameBox.classList.add('empty');
@@ -474,10 +455,48 @@
             
             const finalName = nameLetters.join('');
             document.getElementById('finalName').textContent = finalName;
+            
+            // Play finish sound first
+            const finishAudio = document.getElementById('finishAudio');
+            finishAudio.play().catch(err => console.log('Audio play failed:', err));
+            
+            // After finish sound ends, speak the name
+            finishAudio.onended = function() {
+                speakName(finalName);
+                restartbtn.style.display = '';
+            };
+            
             modal.show();
         }
 
+        function speakName(name) {
+            // Check if speech synthesis is supported
+            if ('speechSynthesis' in window) {
+                // Cancel any ongoing speech
+                window.speechSynthesis.cancel();
+                
+                // Create speech text
+                const text = 'اسمك هو ' + name;
+                const utterance = new SpeechSynthesisUtterance(text);
+                
+                // Set language to Arabic
+                utterance.lang = 'ar-SA';
+                utterance.rate = 0.9; // Slightly slower for clarity
+                utterance.pitch = 1;
+                utterance.volume = 1;
+                
+                // Speak
+                window.speechSynthesis.speak(utterance);
+            }
+           
+
+        }
+
         function startGame() {
+            // Play start sound
+            const startAudio = document.getElementById('startAudio');
+            startAudio.play().catch(err => console.log('Audio play failed:', err));
+            
             document.getElementById('startScreen').classList.remove('active');
             document.getElementById('gameScreen').classList.add('active');
             initGame();
